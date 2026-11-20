@@ -6,6 +6,7 @@ const NAV = [
   { href: "/admin", label: "Обзор" },
   { href: "/admin/products", label: "Товары" },
   { href: "/admin/import", label: "Импорт из 1С" },
+  { href: "/admin/enrichment", label: "AI-карточки (бета)" },
   { href: "/admin/changelog", label: "Журнал изменений" },
   { href: "/admin/orders", label: "Заказы" },
   { href: "/admin/leads", label: "Заявки" },
