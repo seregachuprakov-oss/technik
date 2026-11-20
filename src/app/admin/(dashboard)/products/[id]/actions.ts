@@ -50,3 +50,122 @@ export async function getChangeLogForProduct(productId: string) {
     [productId],
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Фото товара: ручная загрузка сотрудником                           */
+/* ------------------------------------------------------------------ */
+
+const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/heic", "image/heif"];
+
+export interface UploadImageResult {
+  ok: boolean;
+  error?: string;
+  imagePath?: string;
+}
+
+/**
+ * Загрузка настоящего фото товара поверх иллюстрации.
+ *
+ * Файл приводится к WebP 1400px по длинной стороне: снимок с телефона весит
+ * 4–8 МБ и грузится на мобильном интернете секундами, после пережатия — 100–200 КБ.
+ * Путь /uploads/... одновременно служит признаком «это настоящее фото»:
+ * под такими картинками сайт не ставит плашку «Фото иллюстративное».
+ *
+ * Каталог public/uploads исключён из rsync при деплое (scripts/deploy.sh),
+ * поэтому выложенные фото переживают выкладку новой версии сайта.
+ */
+export async function uploadProductImage(productId: string, formData: FormData): Promise<UploadImageResult> {
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Файл не выбран" };
+  if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "Файл больше 12 МБ — уменьшите снимок" };
+  if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+    return { ok: false, error: `Формат ${file.type} не поддерживается: нужен JPEG, PNG, HEIC или WebP` };
+  }
+
+  const current = await queryOne<{ image_path: string | null }>(
+    `SELECT image_path FROM products WHERE id = $1`,
+    [productId],
+  );
+  if (!current) return { ok: false, error: "Товар не найден" };
+
+  try {
+    const [fs, path] = await Promise.all([import("node:fs/promises"), import("node:path")]);
+
+    const dir = path.join(process.cwd(), "public", "uploads", "products");
+    await fs.mkdir(dir, { recursive: true });
+
+    const stamp = `${productId}-${Date.now().toString(36)}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    let filename = `${stamp}.webp`;
+
+    try {
+      const { default: sharp } = await import("sharp");
+      await sharp(buffer)
+        .rotate() // учесть EXIF-ориентацию: иначе фото с телефона ложится набок
+        .resize({ width: 1400, height: 1400, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(path.join(dir, filename));
+    } catch (sharpError) {
+      // Нативная часть sharp может не подняться (не те бинарники под платформу).
+      // Это не повод отказывать сотруднику в загрузке: кладём оригинал как есть,
+      // он просто будет тяжелее. Причину пишем в лог сервера.
+      console.error("sharp недоступен, фото сохраняется без пережатия:", sharpError);
+      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      filename = `${stamp}.${ext}`;
+      await fs.writeFile(path.join(dir, filename), buffer);
+    }
+
+    const imagePath = `/uploads/products/${filename}`;
+
+    await withTransaction(async (client) => {
+      await client.query(
+        `INSERT INTO product_change_log (product_id, field, old_value, new_value, reason, actor)
+         VALUES ($1,'image_path',$2,$3,'admin_upload','admin')`,
+        [productId, current.image_path, imagePath],
+      );
+      await client.query(`UPDATE products SET image_path = $2, updated_at = now() WHERE id = $1`, [productId, imagePath]);
+    });
+
+    // Старое загруженное фото больше никому не нужно; сгенерированные
+    // иллюстрации (не из /uploads) не трогаем — они общие для пайплайна.
+    if (current.image_path?.startsWith("/uploads/products/")) {
+      await fs.rm(path.join(process.cwd(), "public", current.image_path), { force: true }).catch(() => {});
+    }
+
+    revalidatePath(`/admin/products/${productId}`);
+    revalidatePath("/admin/products");
+    revalidatePath("/catalog");
+    return { ok: true, imagePath };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? `Не удалось обработать файл: ${e.message}` : "Не удалось обработать файл" };
+  }
+}
+
+/** Убрать фото: карточка вернётся к иллюстрации/заглушке. */
+export async function removeProductImage(productId: string): Promise<UploadImageResult> {
+  const current = await queryOne<{ image_path: string | null }>(
+    `SELECT image_path FROM products WHERE id = $1`,
+    [productId],
+  );
+  if (!current?.image_path) return { ok: false, error: "У товара и так нет фото" };
+
+  await withTransaction(async (client) => {
+    await client.query(
+      `INSERT INTO product_change_log (product_id, field, old_value, new_value, reason, actor)
+       VALUES ($1,'image_path',$2,NULL,'admin_edit','admin')`,
+      [productId, current.image_path],
+    );
+    await client.query(`UPDATE products SET image_path = NULL, updated_at = now() WHERE id = $1`, [productId]);
+  });
+
+  if (current.image_path.startsWith("/uploads/products/")) {
+    const [fs, path] = await Promise.all([import("node:fs/promises"), import("node:path")]);
+    await fs.rm(path.join(process.cwd(), "public", current.image_path), { force: true }).catch(() => {});
+  }
+
+  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath("/admin/products");
+  revalidatePath("/catalog");
+  return { ok: true };
+}

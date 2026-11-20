@@ -1,57 +1,96 @@
 import { query } from "@/server/db";
 import { ImportForm } from "@/components/admin/ImportForm";
+import { PageHeader, Panel, Table, EmptyRow, StatusPill } from "@/components/admin/ui";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminImportPage() {
   const runs = await query(
-    `SELECT filename, status, rows_total, rows_created, rows_updated, rows_skipped, rows_errored, error_summary, actor, started_at, finished_at
+    `SELECT filename, status, rows_total, rows_created, rows_updated, rows_skipped, rows_errored,
+            error_summary, actor, started_at, finished_at
      FROM import_runs ORDER BY started_at DESC LIMIT 30`,
   );
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold">Импорт из 1С</h1>
-      <p className="mt-2 max-w-2xl text-sm text-[var(--color-muted)]">
-        Загрузите CSV-выгрузку из 1С (отчёт/печать этикеток и ценников, сохранённый как CSV UTF-8). Колонки:
-        onec_id, article, barcode, name, category_slug, subcategory, unit, price, price_source, stock, description.
-        Пример — docs/sample-imports/example_1c_export.csv в репозитории. Товары, отмеченные «ручная правка»,
-        импорт не изменит (кроме остатка), это защищает правки сотрудника.
-      </p>
+      <PageHeader
+        title="Импорт из 1С"
+        description="Загрузка CSV-выгрузки: обновляет цены, описания и — главное — остатки по складу."
+        help="Товар узнаётся по onec_id (GUID номенклатуры 1С), а не по названию или артикулу: названия у поставщиков меняются, артикулы повторяются, GUID — нет. Поэтому одна и та же позиция между выгрузками не раздваивается, а ваши правки остаются на месте."
+      />
 
-      <div className="mt-6">
-        <ImportForm />
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px] lg:items-start">
+        <Panel title="Загрузить файл" help="Файл должен быть в UTF-8. Если 1С отдала Windows-1251 (кириллица в кракозябрах) — откройте в Excel или LibreOffice и пересохраните как «CSV UTF-8». Разделитель и запятая, и точка с запятой подойдут.">
+          <div className="p-4">
+            <ImportForm />
+          </div>
+        </Panel>
+
+        <aside className="rounded-lg border border-line bg-card p-4 text-[12.5px] leading-relaxed text-muted">
+          <div className="flex items-center gap-1.5 text-[13px] font-medium text-text">
+            Колонки файла
+            <HelpTooltip title="Колонки файла" side="left">
+              Порядок колонок не важен, важны заголовки первой строки. Строка без onec_id или без
+              названия пропускается и попадает в список ошибок — остальные при этом импортируются.
+              Образец лежит в репозитории: docs/sample-imports/example_1c_export.csv
+            </HelpTooltip>
+          </div>
+          <code className="mt-2 block rounded-sm bg-sunk px-2 py-2 text-[11.5px] leading-relaxed text-text">
+            onec_id, article, barcode, name, category_slug, subcategory, unit, price, price_source,
+            stock, description
+          </code>
+          <ul className="mt-3 space-y-2">
+            <li>
+              <span className="font-medium text-text">Остаток обновляется всегда.</span> Ноль в колонке
+              stock снимает товар с продажи на сайте, поступление возвращает — это физический склад,
+              его нельзя «защитить» от обновления.
+            </li>
+            <li>
+              <span className="font-medium text-text">Ручные правки переживают импорт.</span> Поля,
+              отмеченные в карточке как защищённые, выгрузка не трогает.
+            </li>
+            <li>
+              <span className="font-medium text-text">Сбой ничего не портит.</span> Если файл не
+              разобрался, импорт помечается как failed, а каталог остаётся прежним.
+            </li>
+          </ul>
+        </aside>
       </div>
 
-      <h2 className="mt-10 font-display text-lg font-semibold">История импортов</h2>
-      <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--color-line)]">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--color-surface)] text-left text-[var(--color-muted)]">
-            <tr><th className="p-3">Файл</th><th className="p-3">Статус</th><th className="p-3">Строк</th><th className="p-3">+/~/0/!</th><th className="p-3">Когда</th></tr>
-          </thead>
-          <tbody>
-            {runs.length === 0 && <tr><td className="p-3 text-[var(--color-muted)]" colSpan={5}>Импортов пока не было</td></tr>}
-            {runs.map((r, i) => {
-              const row = r as Record<string, unknown>;
-              return (
-                <tr key={i} className="border-t border-[var(--color-line)]">
-                  <td className="p-3">{String(row.filename)}</td>
-                  <td className="p-3">
-                    <span className={
-                      row.status === "ok" ? "text-emerald-300" : row.status === "partial" ? "text-amber-300" : "text-red-300"
-                    }>
-                      {String(row.status)}
-                    </span>
-                  </td>
-                  <td className="p-3">{String(row.rows_total)}</td>
-                  <td className="p-3 text-[var(--color-muted)]">{String(row.rows_created)}/{String(row.rows_updated)}/{String(row.rows_skipped)}/{String(row.rows_errored)}</td>
-                  <td className="p-3 text-[var(--color-muted)]">{row.finished_at ? new Date(String(row.finished_at)).toLocaleString("ru-RU") : "—"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <h2 className="mb-3 mt-8 font-display text-[15px] font-semibold">История импортов</h2>
+      <Panel
+        footer="Колонка «+ / ~ / 0 / !» — создано, обновлено, без изменений, ошибок."
+      >
+        <Table head={["Файл", "Статус", "Строк", "+ / ~ / 0 / !", "Когда", "Замечания"]}>
+          {runs.length === 0 && <EmptyRow colSpan={6}>Импортов ещё не было.</EmptyRow>}
+          {runs.map((r, i) => {
+            const row = r as Record<string, unknown>;
+            const status = String(row.status);
+            return (
+              <tr key={i}>
+                <td className="px-4 py-2.5">{String(row.filename)}</td>
+                <td className="px-4 py-2.5">
+                  <StatusPill tone={status === "ok" ? "ok" : status === "partial" ? "warn" : "bad"}>
+                    {status === "ok" ? "успешно" : status === "partial" ? "частично" : "сбой"}
+                  </StatusPill>
+                </td>
+                <td className="tnum px-4 py-2.5">{String(row.rows_total)}</td>
+                <td className="tnum px-4 py-2.5 text-muted">
+                  {String(row.rows_created)} / {String(row.rows_updated)} / {String(row.rows_skipped)} /{" "}
+                  {String(row.rows_errored)}
+                </td>
+                <td className="tnum whitespace-nowrap px-4 py-2.5 text-muted">
+                  {row.finished_at ? new Date(String(row.finished_at)).toLocaleString("ru-RU") : "—"}
+                </td>
+                <td className="max-w-72 px-4 py-2.5 text-[12px] text-muted">
+                  {row.error_summary ? String(row.error_summary).slice(0, 140) : "—"}
+                </td>
+              </tr>
+            );
+          })}
+        </Table>
+      </Panel>
     </div>
   );
 }
