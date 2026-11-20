@@ -31,6 +31,8 @@ export interface Product {
   manual_override: boolean;
   overridden_fields: string[];
   image_path: string | null;
+  image_source: "none" | "real_upload" | "ai_illustrative";
+  is_demo: boolean;
   sort: number;
 }
 

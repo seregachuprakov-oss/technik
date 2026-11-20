@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, Upload, History, ShoppingBag, MessageSquare, LayoutDashboard, LogOut, ExternalLink } from "lucide-react";
+import { Package, Upload, History, ShoppingBag, MessageSquare, LayoutDashboard, LogOut, ExternalLink, Sparkles } from "lucide-react";
 import { logoutAdmin } from "@/server/auth/admin";
 import { Logo } from "@/components/site/Logo";
 import { AdminNavLink } from "./NavLink";
@@ -26,6 +26,7 @@ const GROUPS: { title: string | null; items: NavItem[] }[] = [
     items: [
       { href: "/admin/products", label: "Товары", icon: Package },
       { href: "/admin/import", label: "Импорт из 1С", icon: Upload },
+      { href: "/admin/enrichment", label: "AI-карточки (бета)", icon: Sparkles },
       { href: "/admin/changelog", label: "Журнал изменений", icon: History },
     ],
   },
