@@ -21,9 +21,19 @@
 npm install
 cp .env.local.example .env.local   # заполнить DATABASE_URL, ADMIN_PASSWORD, ADMIN_SESSION_SECRET
 npm run migrate
-npm run seed      # категории + 2 реальных демо-товара через импорт-пайплайн
+npm run seed      # категории + 2 реальные позиции и 8 карточек-примеров через импорт-пайплайн
 npm run dev
 ```
+
+## Внешний вид
+
+Визуальная система описана в `docs/BRANDBOOK_TEHNIK.md`: палитра с долями, пара
+Geologica + Inter (файлы в `src/fonts`, подключение через `next/font/local` —
+сеть при сборке не нужна), радиусы, кривые движения, правила по фото и тону.
+Логотип — `public/brand/*.svg` и инлайн-компонент `src/components/site/Logo.tsx`.
+
+Карточки-примеры в каталоге (`onec_id` начинается с `demo-`) помечены значком
+«демо» и исчезнут после первой настоящей выгрузки из 1С.
 
 ## Импорт из 1С
 
