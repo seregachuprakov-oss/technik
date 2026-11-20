@@ -89,9 +89,42 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 px-5 py-7 sm:px-8 sm:py-9">
-        <div className="mx-auto max-w-5xl">{children}</div>
-      </main>
+      <div className="min-w-0 flex-1">
+        {/* Телефон: сайдбара нет, поэтому меню переезжает в верхнюю полосу
+            с горизонтальной прокруткой — фото товара чаще всего загружают
+            именно с телефона, прямо у полки. */}
+        <div className="on-dark sticky top-0 z-30 md:hidden">
+          <div className="flex items-center justify-between px-4 py-3">
+            <Link href="/admin" className="text-text">
+              <Logo className="h-6" />
+            </Link>
+            <form
+              action={async () => {
+                "use server";
+                await logoutAdmin();
+                const { redirect } = await import("next/navigation");
+                redirect("/admin/login");
+              }}
+            >
+              <button className="flex items-center gap-1.5 text-[12.5px] text-muted">
+                <LogOut size={14} /> Выйти
+              </button>
+            </form>
+          </div>
+          <div className="flex gap-1 overflow-x-auto border-t border-line px-3 py-2">
+            {GROUPS.flatMap((g) => g.items).map((item) => (
+              <AdminNavLink key={item.href} href={item.href} exact={item.exact}>
+                <item.icon size={14} strokeWidth={1.9} />
+                <span className="whitespace-nowrap">{item.label}</span>
+              </AdminNavLink>
+            ))}
+          </div>
+        </div>
+
+        <main className="px-5 py-7 sm:px-8 sm:py-9">
+          <div className="mx-auto max-w-5xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

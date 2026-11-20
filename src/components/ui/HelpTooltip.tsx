@@ -44,12 +44,15 @@ export function HelpTooltip({
     };
   }, [open]);
 
+  // На телефоне подсказка — это нижняя плашка во всю ширину экрана: всплывающее
+  // окно шириной 288px, привязанное к значку, неизбежно уезжает за правый край
+  // и даёт горизонтальную прокрутку. С планшета и шире — обычный поповер у значка.
   const pos =
     side === "left"
-      ? "right-full top-1/2 mr-2 -translate-y-1/2"
+      ? "sm:bottom-auto sm:left-auto sm:right-full sm:top-1/2 sm:mr-2 sm:-translate-y-1/2"
       : side === "top"
-        ? "bottom-full left-1/2 mb-2 -translate-x-1/2"
-        : "left-full top-1/2 ml-2 -translate-y-1/2";
+        ? "sm:bottom-full sm:left-1/2 sm:top-auto sm:mb-2 sm:-translate-x-1/2"
+        : "sm:left-full sm:top-1/2 sm:ml-2 sm:-translate-y-1/2";
 
   return (
     <span ref={wrapRef} className={cn("relative inline-flex align-middle", className)}>
@@ -81,7 +84,8 @@ export function HelpTooltip({
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 2, scale: 0.98 }}
             transition={{ duration: 0.16, ease: [0.2, 0.9, 0.1, 1] }}
             className={cn(
-              "absolute z-50 w-72 rounded-md border border-line bg-card p-3 text-left text-xs leading-relaxed font-normal normal-case tracking-normal text-muted shadow-s3",
+              "fixed inset-x-3 bottom-3 z-50 rounded-md border border-line bg-card p-3.5 text-left text-xs leading-relaxed font-normal normal-case tracking-normal text-muted shadow-s3",
+              "sm:absolute sm:inset-x-auto sm:bottom-auto sm:w-72 sm:p-3",
               pos,
             )}
           >
