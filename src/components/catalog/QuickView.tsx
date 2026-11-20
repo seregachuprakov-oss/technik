@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Eye, X } from "lucide-react";
@@ -17,7 +18,10 @@ import { StockDot } from "@/components/ui/Badge";
  */
 export function QuickViewTrigger({ product }: { product: Product }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const reduced = useReducedMotion();
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +47,10 @@ export function QuickViewTrigger({ product }: { product: Product }) {
         <Eye size={14} /> Быстрый просмотр
       </button>
 
+      {/* Диалог уходит порталом в <body>: карточка товара — это ссылка
+          с hover-состоянием и собственным контекстом наложения, внутри неё
+          модальное окно обрезается и наследует прозрачность. */}
+      {mounted && createPortal(
       <AnimatePresence>
         {open && (
           <div className="fixed inset-0 z-[80] flex items-end justify-center p-0 sm:items-center sm:p-6">
@@ -126,7 +134,9 @@ export function QuickViewTrigger({ product }: { product: Product }) {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body,
+      )}
     </>
   );
 }

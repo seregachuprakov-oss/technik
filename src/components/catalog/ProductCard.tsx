@@ -24,7 +24,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           priority={priority}
           className="aspect-4/3 w-full"
         />
-        <div className="pointer-events-none absolute right-2 top-2 z-[2] opacity-0 transition-opacity duration-[180ms] group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
+        {/* На тач-экранах hover не существует — там кнопка видна всегда,
+            на десктопе проявляется при наведении. */}
+        <div className="absolute right-2 top-2 z-[2] transition-opacity duration-[180ms] md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
           <QuickViewTrigger product={product} />
         </div>
       </div>
