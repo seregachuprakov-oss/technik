@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 495 82" width="495" height="82" role="img" aria-label="Техник">
+  <g transform="scale(1.28)">
+    <path d="M58.85 47.5L32 63L5.15 47.5L5.15 16.5L32 1L58.85 16.5Z" fill="#E8740C"/>
+    <path d="M14.5 17H49.5V27H14.5ZM27 17H37V47H27Z" fill="#14171C" fill-rule="evenodd"/>
+  </g>
+  <g transform="translate(104 5)" fill="#14171C">
+    <path d="M0 0H58V13H0Z"/>
+    <path d="M22.5 0H35.5V72H22.5Z"/>
+    <path d="M69 0H82V72H69Z"/>
+    <path d="M69 0H119V13H69Z"/>
+    <path d="M69 29.5H111V42.5H69Z"/>
+    <path d="M69 59H119V72H69Z"/>
+    <path d="M130 0L144.83 0L184.36 72L169.53 72Z"/>
+    <path d="M169.53 0L184.36 0L144.83 72L130 72Z"/>
+    <path d="M197 0H210V72H197Z"/>
+    <path d="M242 0H255V72H242Z"/>
+    <path d="M210 29.5H242V42.5H210Z"/>
+    <path d="M266 0H279V72H266Z"/>
+    <path d="M311 0H324V72H311Z"/>
+    <path d="M279 72L279 39.99L311 0L311 32.01Z"/>
+    <path d="M335 0H348V72H335Z"/>
+    <path d="M348 36L391 0L391 16.95L348 52.95Z"/>
+    <path d="M348 36L391 72L391 55.05L348 19.05Z"/>
+  </g>
+</svg>

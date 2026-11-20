@@ -1,40 +1,205 @@
 @import "tailwindcss";
 
+/* =============================================================
+   «Техник» · визуальная система (docs/BRANDBOOK_TEHNIK.md)
+   Два грунта: «бумага» (светлый, основной) и «графит» (тёмные полосы).
+   Компоненты не знают, на каком грунте стоят: класс .on-dark
+   переопределяет семантические токены, а не цвета в классах.
+   ============================================================= */
+
 @theme {
-  --color-ink: #0f1115;
-  --color-surface: #171a21;
-  --color-surface-2: #1f232c;
-  --color-line: #2b3038;
-  --color-paper: #f3f4f1;
-  --color-accent: #ff6a1a;
-  --color-accent-2: #ffb020;
-  --color-text: #eef0f2;
-  --color-muted: #9aa1ab;
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-display: "Archivo", "Inter", system-ui, sans-serif;
+  /* --- Грунт и поверхности --- */
+  --color-paper: #f4f5f7; /* фон страницы, ~45% площади */
+  --color-card: #ffffff; /* карточки, панели, ~22% */
+  --color-sunk: #eceef2; /* утопленные поля, полосы таблиц */
+
+  /* --- Графит (тёмные полосы: хедер, герой, футер, админ-сайдбар) --- */
+  --color-ink: #14171c;
+  --color-ink-2: #1d222a;
+  --color-ink-3: #272c34;
+
+  /* --- Текст --- */
+  --color-text: #14171c;
+  --color-muted: #46505f; /* контраст 7.4:1 на бумаге */
+  --color-faint: #8a94a3; /* только подписи 12px+ и иконки */
+
+  /* --- Линии --- */
+  --color-line: #d7dce3;
+  --color-line-strong: #c0c8d2;
+
+  /* --- Акцент: янтарь (строительная оснастка, предупреждающий жёлто-оранжевый) --- */
+  --color-accent: #e8740c; /* заливка кнопок, активные состояния, ~5% */
+  --color-accent-hover: #c85f05;
+  --color-accent-ink: #a04a00; /* акцент как ТЕКСТ на светлом: 5.5:1 */
+  --color-accent-soft: #fff1e2;
+
+  /* --- Функциональные --- */
+  --color-ok: #157347;
+  --color-ok-soft: #e7f5ed;
+  --color-bad: #b42318;
+  --color-bad-soft: #fdeceb;
+  --color-warn: #a36100;
+  --color-warn-soft: #fff6e3;
+
+  /* --- Шрифты (self-hosted, next/font/local; сеть при сборке не нужна) --- */
+  --font-sans: var(--font-inter), ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font-geologica), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Радиусы: прямее = техничнее. Пилюля только для чипов и счётчиков --- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* --- Тени: холодные, от графита, не чёрные --- */
+  --shadow-s1: 0 1px 2px rgba(20, 23, 28, 0.06), 0 1px 1px rgba(20, 23, 28, 0.04);
+  --shadow-s2: 0 6px 18px -6px rgba(20, 23, 28, 0.14), 0 2px 4px -2px rgba(20, 23, 28, 0.06);
+  --shadow-s3: 0 28px 56px -16px rgba(20, 23, 28, 0.28);
+
+  /* --- Тайминги и кривые --- */
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-quart: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+:root {
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 260ms;
+  --dur-4: 420ms;
+  color-scheme: light;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--color-ink);
+  background: var(--color-paper);
   color: var(--color-text);
   font-family: var(--font-sans);
+  font-feature-settings: "cv05" 1;
+}
+
+/* Графитовый грунт: переопределяем токены, а не классы компонентов. */
+.on-dark {
+  --color-paper: #14171c;
+  --color-card: #1d222a;
+  --color-sunk: #11141a;
+  --color-text: #f2f4f7;
+  --color-muted: #a7b0be;
+  --color-faint: #78828f;
+  --color-line: #2b313b;
+  --color-line-strong: #39414d;
+  --color-accent-ink: #ffa34d;
+  --color-accent-soft: #2a2015;
+  --color-ok-soft: #10281d;
+  --color-bad-soft: #2a1513;
+  --color-warn-soft: #2a2211;
+  background: var(--color-paper);
+  color: var(--color-text);
 }
 
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+}
+
+/* Цифры в ценах, остатках и таблицах — моноширинные по ширине знака,
+   иначе суммы «прыгают» при смене количества. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 ::selection {
   background: var(--color-accent);
-  color: #0f1115;
+  color: #fff;
 }
 
-.grain {
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.045) 1px, transparent 0);
-  background-size: 22px 22px;
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* --- Фирменные фактуры ------------------------------------------------ */
+
+/* «Чертёж»: сетка 32px как на миллиметровке, только на графите. */
+.blueprint {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* «Шкала»: деления как на рулетке — разделитель секций. */
+.scale-rule {
+  height: 10px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-line-strong) 0 1px,
+    transparent 1px 12px
+  );
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* --- Движение --------------------------------------------------------- */
+
+@keyframes tk-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes tk-latch {
+  0% { transform: scale(1); }
+  38% { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+@keyframes tk-sweep {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes tk-shimmer {
+  from { background-position: -140% 0; }
+  to { background-position: 240% 0; }
+}
+
+.tk-rise {
+  animation: tk-rise var(--dur-4) var(--ease-out-quint) both;
+}
+
+/* «Защёлка» — подпись движения на добавление в корзину. */
+.tk-latch {
+  animation: tk-latch 260ms var(--ease-snap);
+}
+
+.tk-sweep {
+  transform-origin: left;
+  animation: tk-sweep 420ms var(--ease-out-quint) both;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-sunk) 0%,
+    color-mix(in srgb, var(--color-sunk) 60%, #fff) 50%,
+    var(--color-sunk) 100%
+  );
+  background-size: 220% 100%;
+  animation: tk-shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .tk-rise { opacity: 1; transform: none; }
 }

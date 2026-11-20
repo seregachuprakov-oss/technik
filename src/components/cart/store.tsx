@@ -17,6 +17,13 @@ interface CartState {
   clear: () => void;
   count: number;
   totalKopecks: number;
+  /** Состояние выдвижной корзины живёт здесь же: иначе шапка и кнопки
+   *  «в корзину» на разных страницах не смогли бы открыть одну панель. */
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  /** id последнего добавленного товара — для подсветки строки в панели. */
+  lastAddedId: string | null;
 }
 
 const CartContext = createContext<CartState | null>(null);
@@ -25,6 +32,8 @@ const STORAGE_KEY = "tehnik_cart_v1";
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -46,6 +55,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, hydrated]);
 
   const addItem = useCallback((item: Omit<CartItem, "qty">, qty = 1) => {
+    setLastAddedId(item.productId);
+    setIsOpen(true);
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === item.productId);
       if (existing) {
@@ -71,9 +82,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const count = useMemo(() => items.reduce((sum, i) => sum + i.qty, 0), [items]);
   const totalKopecks = useMemo(() => items.reduce((sum, i) => sum + i.qty * i.priceKopecks, 0), [items]);
 
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
+
+  // Пока панель открыта, страница под ней не должна прокручиваться.
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
   const value = useMemo(
-    () => ({ items, addItem, setQty, removeItem, clear, count, totalKopecks }),
-    [items, addItem, setQty, removeItem, clear, count, totalKopecks],
+    () => ({
+      items, addItem, setQty, removeItem, clear, count, totalKopecks,
+      isOpen, openCart, closeCart, lastAddedId,
+    }),
+    [items, addItem, setQty, removeItem, clear, count, totalKopecks, isOpen, openCart, closeCart, lastAddedId],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
